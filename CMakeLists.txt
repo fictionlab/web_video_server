@@ -76,8 +76,8 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 install(DIRECTORY include/${PROJECT_NAME}/
-   DESTINATION include/${PROJECT_NAME}
-   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+  DESTINATION include/${PROJECT_NAME}
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
 
 ament_package()
