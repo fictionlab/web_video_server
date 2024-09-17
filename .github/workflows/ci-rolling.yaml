@@ -9,6 +9,9 @@ on:
     branches:
       - rolling
 
+env:
+  ROS_DISTRO: rolling
+
 jobs:
   industrial_ci:
     runs-on: ubuntu-22.04
