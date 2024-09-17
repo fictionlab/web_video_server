@@ -5,9 +5,10 @@
 namespace web_video_server
 {
 
-ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
-    request_(request), connection_(connection), nh_(nh), inactive_(false)
+ImageStreamer::ImageStreamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh)
+:request_(request), connection_(connection), nh_(nh), inactive_(false)
 {
   topic_ = request.get_query_param_value_or_default("topic", "");
 }
@@ -16,9 +17,10 @@ ImageStreamer::~ImageStreamer()
 {
 }
 
-ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
-  ImageStreamer(request, connection, nh), it_(nh), initialized_(false)
+ImageTransportImageStreamer::ImageTransportImageStreamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh)
+:ImageStreamer(request, connection, nh), it_(nh), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -41,7 +43,7 @@ void ImageTransportImageStreamer::start()
       break;
     }
     auto & topic_name = topic_and_types.first;
-    if(topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)){
+    if(topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
       break;
     }
@@ -55,30 +57,25 @@ void ImageTransportImageStreamer::initialize(const cv::Mat &)
 
 void ImageTransportImageStreamer::restreamFrame(double max_age)
 {
-  if (inactive_ || !initialized_ )
+  if (inactive_ || !initialized_) {
     return;
+  }
   try {
-    if ( last_frame + rclcpp::Duration::from_seconds(max_age) < nh_->now() ) {
+    if (last_frame + rclcpp::Duration::from_seconds(max_age) < nh_->now() ) {
       boost::mutex::scoped_lock lock(send_mutex_);
       sendImage(output_size_image, nh_->now() ); // don't update last_frame, it may remain an old value.
     }
-  }
-  catch (boost::system::system_error &e)
-  {
+  } catch (boost::system::system_error & e) {
     // happens when client disconnects
     RCLCPP_DEBUG(nh_->get_logger(), "system_error exception: %s", e.what());
     inactive_ = true;
     return;
-  }
-  catch (std::exception &e)
-  {
+  } catch (std::exception & e) {
     // TODO THROTTLE with 30
     RCLCPP_ERROR(nh_->get_logger(), "exception: %s", e.what());
     inactive_ = true;
     return;
-  }
-  catch (...)
-  {
+  } catch (...) {
     // TODO THROTTLE with 30
     RCLCPP_ERROR(nh_->get_logger(), "exception");
     inactive_ = true;
@@ -86,30 +83,26 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   }
 }
 
-void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &msg)
+void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
-  if (inactive_)
+  if (inactive_) {
     return;
+  }
 
   cv::Mat img;
-  try
-  {
-    if (msg->encoding.find("F") != std::string::npos)
-    {
+  try {
+    if (msg->encoding.find("F") != std::string::npos) {
       // scale floating point images
       cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
       cv::Mat_<float> float_image = float_image_bridge;
       double max_val;
       cv::minMaxIdx(float_image, 0, &max_val);
 
-      if (max_val > 0)
-      {
+      if (max_val > 0) {
         float_image *= (255 / max_val);
       }
       img = float_image;
-    }
-    else
-    {
+    } else {
       // Convert to OpenCV native BGR color
       img = cv_bridge::toCvCopy(msg, "bgr8")->image;
     }
@@ -120,28 +113,23 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     output_width_ = input_width;
     output_height_ = input_height;
 
-    if (invert_)
-    {
+    if (invert_) {
       // Rotate 180 degrees
       cv::flip(img, img, false);
       cv::flip(img, img, true);
     }
 
     boost::mutex::scoped_lock lock(send_mutex_); // protects output_size_image
-    if (output_width_ != input_width || output_height_ != input_height)
-    {
+    if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
       cv::Size new_size(output_width_, output_height_);
       cv::resize(img, img_resized, new_size);
       output_size_image = img_resized;
-    }
-    else
-    {
+    } else {
       output_size_image = img;
     }
 
-    if (!initialized_)
-    {
+    if (!initialized_) {
       initialize(output_size_image);
       initialized_ = true;
     }
@@ -149,37 +137,27 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     last_frame = nh_->now();
     sendImage(output_size_image, msg->header.stamp);
 
-  }
-  catch (cv_bridge::Exception &e)
-  {
+  } catch (cv_bridge::Exception & e) {
     // TODO THROTTLE with 30
     RCLCPP_ERROR(nh_->get_logger(), "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
-  }
-  catch (cv::Exception &e)
-  {
+  } catch (cv::Exception & e) {
     // TODO THROTTLE with 30
     RCLCPP_ERROR(nh_->get_logger(), "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
-  }
-  catch (boost::system::system_error &e)
-  {
+  } catch (boost::system::system_error & e) {
     // happens when client disconnects
     RCLCPP_DEBUG(nh_->get_logger(), "system_error exception: %s", e.what());
     inactive_ = true;
     return;
-  }
-  catch (std::exception &e)
-  {
+  } catch (std::exception & e) {
     // TODO THROTTLE with 30
     RCLCPP_ERROR(nh_->get_logger(), "exception: %s", e.what());
     inactive_ = true;
     return;
-  }
-  catch (...)
-  {
+  } catch (...) {
     // TODO THROTTLE with 30
     RCLCPP_ERROR(nh_->get_logger(), "exception");
     inactive_ = true;

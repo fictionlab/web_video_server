@@ -9,27 +9,29 @@
 namespace web_video_server
 {
 
-class H264Streamer : public LibavStreamer
-{
+  class H264Streamer: public LibavStreamer
+  {
 public:
-  H264Streamer(const async_web_server_cpp::HttpRequest& request, async_web_server_cpp::HttpConnectionPtr connection,
+    H264Streamer(const async_web_server_cpp::HttpRequest & request,
+      async_web_server_cpp::HttpConnectionPtr connection,
               rclcpp::Node::SharedPtr nh);
-  ~H264Streamer();
+    ~H264Streamer();
 protected:
-  virtual void initializeEncoder();
-  std::string preset_;
-};
+    virtual void initializeEncoder();
+    std::string preset_;
+  };
 
-class H264StreamerType : public LibavStreamerType
-{
+  class H264StreamerType: public LibavStreamerType
+  {
 public:
-  H264StreamerType();
-  virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest& request,
-                                                           async_web_server_cpp::HttpConnectionPtr connection,
+    H264StreamerType();
+    virtual boost::shared_ptr < ImageStreamer >
+    create_streamer(const async_web_server_cpp::HttpRequest & request,
+                                                           async_web_server_cpp::HttpConnectionPtr
+      connection,
                                                            rclcpp::Node::SharedPtr nh);
-};
+  };
 
 }
 
 #endif
-
