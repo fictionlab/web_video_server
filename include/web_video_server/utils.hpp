@@ -12,6 +12,6 @@ namespace web_video_server
  * @param name The name of the QoS profile name.
  * @return An optional containing the matching QoS profile.
  */
-  std::optional < rmw_qos_profile_t > get_qos_profile_from_name(const std::string name);
+std::optional<rmw_qos_profile_t> get_qos_profile_from_name(const std::string name);
 
 }  // namespace web_video_server
