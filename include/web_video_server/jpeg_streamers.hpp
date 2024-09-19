@@ -3,10 +3,10 @@
 
 #include <image_transport/image_transport.hpp>
 #include <opencv2/imgcodecs.hpp>
-#include "web_video_server/image_streamer.h"
+#include "web_video_server/image_streamer.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
-#include "web_video_server/multipart_stream.h"
+#include "web_video_server/multipart_stream.hpp"
 
 namespace web_video_server
 {

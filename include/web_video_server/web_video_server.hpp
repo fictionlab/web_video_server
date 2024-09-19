@@ -4,7 +4,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <cv_bridge/cv_bridge.hpp>
 #include <vector>
-#include "web_video_server/image_streamer.h"
+#include "web_video_server/image_streamer.hpp"
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
