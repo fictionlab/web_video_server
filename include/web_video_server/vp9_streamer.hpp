@@ -15,7 +15,7 @@ public:
   Vp9Streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
   ~Vp9Streamer();
 
 protected:
@@ -31,7 +31,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr
     connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
 };
 
 }

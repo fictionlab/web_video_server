@@ -33,14 +33,14 @@ static bool ros_connection_logger(
 {
   if (__verbose) {
     // TODO reenable
-    // RCLCPP_INFO(nh->get_logger(), "Handling Request: %s", request.uri.c_str());
+    // RCLCPP_INFO(node->get_logger(), "Handling Request: %s", request.uri.c_str());
   }
   try {
     forward(request, connection, begin, end);
     return true;
   } catch (std::exception & e) {
     // TODO reenable
-    // RCLCPP_WARN(nh->get_logger(), "Error Handling Request: %s", e.what());
+    // RCLCPP_WARN(node->get_logger(), "Error Handling Request: %s", e.what());
     return false;
   }
   return false;

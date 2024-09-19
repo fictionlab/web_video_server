@@ -10,10 +10,10 @@ namespace web_video_server
 
 LibavStreamer::LibavStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node,
   const std::string & format_name, const std::string & codec_name,
   const std::string & content_type)
-:ImageTransportImageStreamer(request, connection, nh), format_context_(0), codec_(0),
+:ImageTransportImageStreamer(request, connection, node), format_context_(0), codec_(0),
   codec_context_(0), video_stream_(
     0), frame_(0), sws_context_(0), first_image_timestamp_(0), format_name_(
     format_name), codec_name_(codec_name), content_type_(content_type), opt_(0), io_buffer_(0)
@@ -248,9 +248,9 @@ void LibavStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
 
   ret = avcodec_send_frame(codec_context_, frame_);
   if (ret == AVERROR_EOF) {
-    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_send_frame() encoder flushed");
+    RCLCPP_DEBUG(node_->get_logger(), "avcodec_send_frame() encoder flushed");
   } else if (ret == AVERROR(EAGAIN)) {
-    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_send_frame() need output read out");
+    RCLCPP_DEBUG(node_->get_logger(), "avcodec_send_frame() need output read out");
   }
   if (ret < 0) {
     throw std::runtime_error("Error encoding video frame");
@@ -258,9 +258,9 @@ void LibavStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
   ret = avcodec_receive_packet(codec_context_, pkt);
   got_packet = pkt->size > 0;
   if (ret == AVERROR_EOF) {
-    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_recieve_packet() encoder flushed");
+    RCLCPP_DEBUG(node_->get_logger(), "avcodec_recieve_packet() encoder flushed");
   } else if (ret == AVERROR(EAGAIN)) {
-    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_recieve_packet() need more input");
+    RCLCPP_DEBUG(node_->get_logger(), "avcodec_recieve_packet() need more input");
     got_packet = 0;
   }
 
@@ -304,10 +304,10 @@ LibavStreamerType::LibavStreamerType(
 boost::shared_ptr<ImageStreamer> LibavStreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr nh)
+  rclcpp::Node::SharedPtr node)
 {
   return boost::shared_ptr<ImageStreamer>(
-      new LibavStreamer(request, connection, nh, format_name_, codec_name_, content_type_));
+      new LibavStreamer(request, connection, node, format_name_, codec_name_, content_type_));
 }
 
 std::string LibavStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)

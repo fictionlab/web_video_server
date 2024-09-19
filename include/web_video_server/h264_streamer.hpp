@@ -15,7 +15,7 @@ public:
   H264Streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
   ~H264Streamer();
 
 protected:
@@ -32,7 +32,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr
     connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
 };
 
 }

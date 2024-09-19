@@ -16,7 +16,7 @@ public:
   RosCompressedStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
   ~RosCompressedStreamer();
   virtual void start();
   virtual void restreamFrame(double max_age);
@@ -44,7 +44,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr
     connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
   std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 

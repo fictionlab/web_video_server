@@ -18,7 +18,7 @@ public:
   ImageStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
 
   virtual void start() = 0;
   virtual ~ImageStreamer();
@@ -41,7 +41,7 @@ public:
 protected:
   async_web_server_cpp::HttpConnectionPtr connection_;
   async_web_server_cpp::HttpRequest request_;
-  rclcpp::Node::SharedPtr nh_;
+  rclcpp::Node::SharedPtr node_;
   bool inactive_;
   image_transport::Subscriber image_sub_;
   std::string topic_;
@@ -54,7 +54,7 @@ public:
   ImageTransportImageStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
   virtual ~ImageTransportImageStreamer();
 
   virtual void start();
@@ -90,7 +90,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr
     connection,
-    rclcpp::Node::SharedPtr nh) = 0;
+    rclcpp::Node::SharedPtr node) = 0;
 
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request) = 0;
 };

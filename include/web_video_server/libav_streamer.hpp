@@ -27,7 +27,7 @@ public:
   LibavStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr nh, const std::string & format_name,
+    rclcpp::Node::SharedPtr node, const std::string & format_name,
     const std::string & codec_name,
     const std::string & content_type);
 
@@ -74,7 +74,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr
     connection,
-    rclcpp::Node::SharedPtr nh);
+    rclcpp::Node::SharedPtr node);
 
   std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 
