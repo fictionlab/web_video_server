@@ -68,7 +68,7 @@ private:
 
   std::vector<std::shared_ptr<ImageStreamer>> image_subscribers_;
   std::map<std::string, std::shared_ptr<ImageStreamerType>> stream_types_;
-  boost::mutex subscriber_mutex_;
+  std::mutex subscriber_mutex_;
 };
 
 }

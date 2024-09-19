@@ -17,7 +17,7 @@ PngStreamer::PngStreamer(
 PngStreamer::~PngStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+  std::scoped_lock lock(send_mutex_); // protects sendImage.
 }
 
 void PngStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
@@ -61,7 +61,7 @@ PngSnapshotStreamer::PngSnapshotStreamer(
 PngSnapshotStreamer::~PngSnapshotStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+  std::scoped_lock lock(send_mutex_); // protects sendImage.
 }
 
 void PngSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
