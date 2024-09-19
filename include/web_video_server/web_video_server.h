@@ -23,7 +23,7 @@ public:
    * @brief  Constructor
    * @return
    */
-    WebVideoServer(rclcpp::Node::SharedPtr & nh, rclcpp::Node::SharedPtr & private_nh);
+    WebVideoServer(rclcpp::Node::SharedPtr & node);
 
   /**
    * @brief  Destructor - Cleans up
@@ -57,7 +57,7 @@ private:
     void restreamFrames(double max_age);
     void cleanup_inactive_streams();
 
-    rclcpp::Node::SharedPtr nh_;
+    rclcpp::Node::SharedPtr node_;
     rclcpp::WallTimer < rclcpp::VoidCallbackType > ::SharedPtr cleanup_timer_;
     int ros_threads_;
     double publish_rate_;

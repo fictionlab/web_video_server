@@ -46,51 +46,26 @@ static bool ros_connection_logger(
   return false;
 }
 
-WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & nh, rclcpp::Node::SharedPtr & private_nh)
-:nh_(nh), handler_group_(
+WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & node)
+:node_(node), handler_group_(
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
 {
-  rclcpp::Parameter parameter;
-  if (private_nh->get_parameter("port", parameter)) {
-    port_ = parameter.as_int();
-  } else {
-    port_ = 8080;
-  }
-  if (private_nh->get_parameter("verbose", parameter)) {
-    __verbose = parameter.as_bool();
-  } else {
-    __verbose = true;
-  }
+  node_->declare_parameter("port", 8080);
+  node_->declare_parameter("verbose", true);
+  node_->declare_parameter("address", "0.0.0.0");
+  node_->declare_parameter("server_threads", 1);
+  node_->declare_parameter("ros_threads", 2);
+  node_->declare_parameter("publish_rate", -1.0);
+  node_->declare_parameter("default_stream_type", "mjpeg");
 
-  if (private_nh->get_parameter("address", parameter)) {
-    address_ = parameter.as_string();
-  } else {
-    address_ = "0.0.0.0";
-  }
-
+  node_->get_parameter("port", port_);
+  node_->get_parameter("verbose", __verbose);
+  node_->get_parameter("address", address_);
   int server_threads;
-  if (private_nh->get_parameter("server_threads", parameter)) {
-    server_threads = parameter.as_int();
-  } else {
-    server_threads = 1;
-  }
-
-  if (private_nh->get_parameter("ros_threads", parameter)) {
-    ros_threads_ = parameter.as_int();
-  } else {
-    ros_threads_ = 2;
-  }
-  if (private_nh->get_parameter("publish_rate", parameter)) {
-    publish_rate_ = parameter.as_double();
-  } else {
-    publish_rate_ = -1.0;
-  }
-
-  if (private_nh->get_parameter("default_stream_type", parameter)) {
-    __default_stream_type = parameter.as_string();
-  } else {
-    __default_stream_type = "mjpeg";
-  }
+  node_->get_parameter("server_threads", server_threads);
+  node_->get_parameter("ros_threads", ros_threads_);
+  node_->get_parameter("publish_rate", publish_rate_);
+  node_->get_parameter("default_stream_type", __default_stream_type);
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["png"] = boost::shared_ptr<ImageStreamerType>(new PngStreamerType());
@@ -117,7 +92,7 @@ WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & nh, rclcpp::Node::Share
         _2, _3, _4),
                                              server_threads));
   } catch(boost::exception & e) {
-    RCLCPP_ERROR(nh_->get_logger(), "Exception when creating the web server! %s:%d",
+    RCLCPP_ERROR(node_->get_logger(), "Exception when creating the web server! %s:%d",
         address_.c_str(), port_);
     throw;
   }
@@ -130,17 +105,17 @@ WebVideoServer::~WebVideoServer()
 void WebVideoServer::setup_cleanup_inactive_streams()
 {
   std::function<void()> callback = std::bind(&WebVideoServer::cleanup_inactive_streams, this);
-  cleanup_timer_ = nh_->create_wall_timer(500ms, callback);
+  cleanup_timer_ = node_->create_wall_timer(500ms, callback);
 }
 
 void WebVideoServer::spin()
 {
   server_->run();
-  RCLCPP_INFO(nh_->get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
+  RCLCPP_INFO(node_->get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
   rclcpp::executors::MultiThreadedExecutor spinner(rclcpp::ExecutorOptions(), ros_threads_);
-  spinner.add_node(nh_);
+  spinner.add_node(node_);
   if (publish_rate_ > 0) {
-    nh_->create_wall_timer(1s / publish_rate_, [this](){restreamFrames(1.0 / publish_rate_);});
+    node_->create_wall_timer(1s / publish_rate_, [this](){restreamFrames(1.0 / publish_rate_);});
   }
   spinner.spin();
   server_->stop();
@@ -166,7 +141,7 @@ void WebVideoServer::cleanup_inactive_streams()
                                       !boost::bind(&ImageStreamer::isInactive, _1));
     if (__verbose) {
       for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr) {
-        RCLCPP_INFO(nh_->get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
+        RCLCPP_INFO(node_->get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
       }
     }
     image_subscribers_.erase(new_end, image_subscribers_.end());
@@ -184,7 +159,7 @@ bool WebVideoServer::handle_stream(
     // Fallback for topics without corresponding compressed topics
     if (type == std::string("ros_compressed")) {
       std::string compressed_topic_name = topic + "/compressed";
-      auto tnat = nh_->get_topic_names_and_types();
+      auto tnat = node_->get_topic_names_and_types();
       bool did_find_compressed_topic = false;
       for (auto topic_and_types : tnat) {
         if (topic_and_types.second.size() > 1) {
@@ -200,13 +175,13 @@ bool WebVideoServer::handle_stream(
         }
       }
       if (!did_find_compressed_topic) {
-        RCLCPP_WARN(nh_->get_logger(),
+        RCLCPP_WARN(node_->get_logger(),
             "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
         type = "mjpeg";
       }
     }
     boost::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request,
-        connection, nh_);
+        connection, node_);
     streamer->start();
     boost::mutex::scoped_lock lock(subscriber_mutex_);
     image_subscribers_.push_back(streamer);
@@ -223,7 +198,7 @@ bool WebVideoServer::handle_snapshot(
   async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
   const char * end)
 {
-  boost::shared_ptr<ImageStreamer> streamer(new JpegSnapshotStreamer(request, connection, nh_));
+  boost::shared_ptr<ImageStreamer> streamer(new JpegSnapshotStreamer(request, connection, node_));
   streamer->start();
 
   boost::mutex::scoped_lock lock(subscriber_mutex_);
@@ -243,7 +218,7 @@ bool WebVideoServer::handle_stream_viewer(
     if (type == std::string("ros_compressed")) {
 
       std::string compressed_topic_name = topic + "/compressed";
-      auto tnat = nh_->get_topic_names_and_types();
+      auto tnat = node_->get_topic_names_and_types();
       bool did_find_compressed_topic = false;
       for (auto topic_and_types : tnat) {
         if (topic_and_types.second.size() > 1) {
@@ -259,7 +234,7 @@ bool WebVideoServer::handle_stream_viewer(
         }
       }
       if (!did_find_compressed_topic) {
-        RCLCPP_WARN(nh_->get_logger(),
+        RCLCPP_WARN(node_->get_logger(),
             "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
         type = "mjpeg";
       }
@@ -290,7 +265,7 @@ bool WebVideoServer::handle_list_streams(
 {
   std::vector<std::string> image_topics;
   std::vector<std::string> camera_info_topics;
-  auto tnat = nh_->get_topic_names_and_types();
+  auto tnat = node_->get_topic_names_and_types();
   for (auto topic_and_types : tnat) {
     if (topic_and_types.second.size() > 1) {
       // explicitly avoid topics with more than one type
@@ -374,10 +349,9 @@ bool WebVideoServer::handle_list_streams(
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  auto nh = std::make_shared<rclcpp::Node>("web_video_server");
-  auto private_nh = std::make_shared<rclcpp::Node>("_web_video_server");
+  auto node = std::make_shared<rclcpp::Node>("web_video_server");
 
-  web_video_server::WebVideoServer server(nh, private_nh);
+  web_video_server::WebVideoServer server(node);
   server.setup_cleanup_inactive_streams();
   server.spin();
 
