@@ -26,11 +26,9 @@ class Vp9StreamerType : public LibavStreamerType
 {
 public:
   Vp9StreamerType();
-  virtual boost::shared_ptr<ImageStreamer>
-  create_streamer(
+  std::shared_ptr<ImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr
-    connection,
+    async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
 };
 

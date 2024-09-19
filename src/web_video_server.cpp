@@ -67,13 +67,12 @@ WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & node)
   node_->get_parameter("publish_rate", publish_rate_);
   node_->get_parameter("default_stream_type", __default_stream_type);
 
-  stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
-  stream_types_["png"] = boost::shared_ptr<ImageStreamerType>(new PngStreamerType());
-  stream_types_["ros_compressed"] =
-    boost::shared_ptr<ImageStreamerType>(new RosCompressedStreamerType());
-  stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new Vp8StreamerType());
-  stream_types_["h264"] = boost::shared_ptr<ImageStreamerType>(new H264StreamerType());
-  stream_types_["vp9"] = boost::shared_ptr<ImageStreamerType>(new Vp9StreamerType());
+  stream_types_["mjpeg"] = std::make_shared<MjpegStreamerType>();
+  stream_types_["png"] = std::make_shared<PngStreamerType>();
+  stream_types_["ros_compressed"] = std::make_shared<RosCompressedStreamerType>();
+  stream_types_["vp8"] = std::make_shared<Vp8StreamerType>();
+  stream_types_["h264"] = std::make_shared<H264StreamerType>();
+  stream_types_["vp9"] = std::make_shared<Vp9StreamerType>();
 
   handler_group_.addHandlerForPath("/",
       boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2, _3, _4));
@@ -125,7 +124,7 @@ void WebVideoServer::restreamFrames(double max_age)
 {
   boost::mutex::scoped_lock lock(subscriber_mutex_);
 
-  typedef std::vector<boost::shared_ptr<ImageStreamer>>::iterator itr_type;
+  typedef std::vector<std::shared_ptr<ImageStreamer>>::iterator itr_type;
 
   for (itr_type itr = image_subscribers_.begin(); itr < image_subscribers_.end(); ++itr) {
     (*itr)->restreamFrame(max_age);
@@ -136,7 +135,7 @@ void WebVideoServer::cleanup_inactive_streams()
 {
   boost::mutex::scoped_lock lock(subscriber_mutex_, boost::try_to_lock);
   if (lock) {
-    typedef std::vector<boost::shared_ptr<ImageStreamer>>::iterator itr_type;
+    typedef std::vector<std::shared_ptr<ImageStreamer>>::iterator itr_type;
     itr_type new_end = std::partition(image_subscribers_.begin(), image_subscribers_.end(),
                                       !boost::bind(&ImageStreamer::isInactive, _1));
     if (__verbose) {
@@ -180,7 +179,7 @@ bool WebVideoServer::handle_stream(
         type = "mjpeg";
       }
     }
-    boost::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request,
+    std::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request,
         connection, node_);
     streamer->start();
     boost::mutex::scoped_lock lock(subscriber_mutex_);
@@ -198,7 +197,8 @@ bool WebVideoServer::handle_snapshot(
   async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
   const char * end)
 {
-  boost::shared_ptr<ImageStreamer> streamer(new JpegSnapshotStreamer(request, connection, node_));
+  std::shared_ptr<ImageStreamer> streamer = std::make_shared<JpegSnapshotStreamer>(request,
+      connection, node_);
   streamer->start();
 
   boost::mutex::scoped_lock lock(subscriber_mutex_);
