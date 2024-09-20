@@ -45,9 +45,8 @@ void MultipartStream::sendPartHeader(
   headers->push_back(async_web_server_cpp::HttpHeader("Access-Control-Allow-Headers",
       "Origin, Authorization, Accept, Content-Type"));
   headers->push_back(async_web_server_cpp::HttpHeader("Access-Control-Max-Age", "3600"));
-  headers->push_back(
-      async_web_server_cpp::HttpHeader("Content-Length",
-      boost::lexical_cast<std::string>(payload_size)));
+  headers->push_back(async_web_server_cpp::HttpHeader("Content-Length",
+      std::to_string(payload_size)));
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }
 
