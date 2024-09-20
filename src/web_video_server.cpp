@@ -1,5 +1,3 @@
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <chrono>
 #include <vector>
@@ -293,8 +291,7 @@ bool WebVideoServer::handle_list_streams(
                     "<head><title>ROS Image Topic List</title></head>"
                     "<body><h1>Available ROS Image Topics:</h1>");
   connection->write("<ul>");
-  BOOST_FOREACH(std::string & camera_info_topic, camera_info_topics)
-  {
+  for(std::string & camera_info_topic : camera_info_topics) {
     if (boost::algorithm::ends_with(camera_info_topic, "/camera_info")) {
       std::string base_topic = camera_info_topic.substr(0,
           camera_info_topic.size() - strlen("camera_info"));
